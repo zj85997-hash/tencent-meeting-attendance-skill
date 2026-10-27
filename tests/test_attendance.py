@@ -87,7 +87,7 @@ class RosterTest(unittest.TestCase):
         roster = self.data['roster']
         self.assertEqual(len(roster), 18)
         self.assertEqual(len([v for v in roster.values() if v['identity'] == '成员']), 16)
-        self.assertEqual(sorted(self.data['excluded'].values()), ['旧书签', '远方'])
+        self.assertEqual(sorted(self.data['excluded'].values()), ['A019', 'A020'])
 
     def test_rules_table(self):
         rules = A.build_rules(self.data['rules'])
@@ -95,9 +95,9 @@ class RosterTest(unittest.TestCase):
         self.assertEqual(rules['absent_after'], datetime.time(7, 0))
 
     def test_name_variants(self):
-        cases = [('小鹿(三组)', '小鹿'), ('南风（李）', '南风'), ('LILY-广州', 'Lily'),
-                 ('Kevin(Zhang)', 'Kevin'), ('kevin', 'Kevin'), ('一一的iPad', '一一'),
-                 ('海盐（上海）', '海盐'), ('Abu', '阿布'), ('麦穗', '麦穗')]
+        cases = [('A004(三组)', 'A004'), ('A010（二组）', 'A010'), ('a015-广州', 'A015'),
+                 ('A016(北京)', 'A016'), ('a016', 'A016'), ('A018的iPad', 'A018'),
+                 ('A003（上海）', 'A003'), ('a007', 'A007'), ('A005', 'A005'), ('A012家长', 'A012')]
         for display, name in cases:
             key = A.match_name(display, self.data['aliases'])
             self.assertIsNotNone(key, display)
@@ -134,25 +134,25 @@ class EndToEndTest(unittest.TestCase):
         s = self.names(day)
         self.assertEqual(day['date'], datetime.date(2026, 3, 2))
         self.assertEqual(day['meeting_id'], '900000001')
-        self.assertEqual(s['Kevin'], '迟到')      # 06:00:01
-        self.assertEqual(s['木木'], '缺勤')       # 07:05 入会
-        self.assertEqual(s['星河'], '缺勤')       # 没来
-        self.assertEqual(s['一一'], '准时')       # 两台设备取最早
+        self.assertEqual(s['A016'], '迟到')      # 06:00:01
+        self.assertEqual(s['A009'], '缺勤')       # 07:05 入会
+        self.assertEqual(s['A013'], '缺勤')       # 没来
+        self.assertEqual(s['A018'], '准时')       # 手机和平板两台设备，取最早
         self.assertEqual(list(s.values()).count('准时'), 13)
-        self.assertEqual([n for n, _ in day['excluded_seen']], ['旧书签'])
-        self.assertEqual(sorted(n for n, _, _ in day['nonstat']), ['小满', '晨光'])
+        self.assertEqual([n for n, _ in day['excluded_seen']], ['A019'])
+        self.assertEqual(sorted(n for n, _, _ in day['nonstat']), ['A001', 'A002'])
         self.assertEqual(day['unmatched'], [])
 
     def test_wednesday_boundary_and_leave(self):
-        s = self.names(self.daily(2, leaves=['布丁妈妈']))
-        self.assertEqual(s['海盐'], '准时')       # 正好 06:00:00
-        self.assertEqual(s['阿布'], '缺勤')
-        self.assertEqual(s['布丁'], '请假')
+        s = self.names(self.daily(2, leaves=['A012家长']))
+        self.assertEqual(s['A003'], '准时')       # 正好 06:00:00
+        self.assertEqual(s['A007'], '缺勤')
+        self.assertEqual(s['A012'], '请假')
 
     def test_thursday_unmatched(self):
         day = self.daily(3)
         self.assertEqual([n for n, _ in day['unmatched']], ['访客123'])
-        self.assertEqual(self.names(day)['青柠'], '迟到')
+        self.assertEqual(self.names(day)['A008'], '迟到')
 
     def test_cli_week_report(self):
         out = os.path.join(self.tmp.name, 'out')
@@ -162,9 +162,9 @@ class EndToEndTest(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         with open(os.path.join(out, '0302-0306_考勤周报.md'), encoding='utf-8') as f:
             week = f.read()
-        self.assertIn('| 布丁 | 准 | 假 | 假 | 准 | 准 | 0 | 2 | 0 | 1 |', week)   # 第 2 次请假按迟到计
-        self.assertIn('| 青柠 | 准 | 迟 | 准 | 迟 | 准 | 2 | 0 | 0 | 2 |', week)
-        self.assertIn('| 阿布 | 准 | 准 | 缺 | 准 | 迟 | 1 | 0 | 1 | 1 |', week)
+        self.assertIn('| A012 | 准 | 假 | 假 | 准 | 准 | 0 | 2 | 0 | 1 |', week)   # 第 2 次请假按迟到计
+        self.assertIn('| A008 | 准 | 迟 | 准 | 迟 | 准 | 2 | 0 | 0 | 2 |', week)
+        self.assertIn('| A007 | 准 | 准 | 缺 | 准 | 迟 | 1 | 0 | 1 | 1 |', week)
         for d in ('0302', '0303', '0304', '0305', '0306'):
             self.assertTrue(os.path.exists(os.path.join(out, '%s_考勤日报.md' % d)))
 
@@ -176,4 +176,4 @@ class EndToEndTest(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         with open(os.path.join(out, '0302_考勤日报.md'), encoding='utf-8') as f:
             report = f.read()
-        self.assertIn('## ✅ 准时：2 人', report)   # 周一只有知夏 05:46:58、麦穗 05:48:45 早于 05:50
+        self.assertIn('## ✅ 准时：2 人', report)   # 周一只有 A011 05:46:58、A005 05:48:45 早于 05:50

@@ -11,7 +11,7 @@
 用法：
     python3 attendance_stat.py 导出.xlsx --roster roster.md                 # 单日 → 日报
     python3 attendance_stat.py 周一.xlsx 周二.xlsx … --roster roster.md     # 多日 → 日报 + 周报
-    python3 attendance_stat.py 导出.xlsx --leave "小鹿,阿布"                 # 当日请假名单
+    python3 attendance_stat.py 导出.xlsx --leave "A004,A007"                 # 当日请假名单
     python3 attendance_stat.py *.xlsx --leave-file leaves.csv               # 按日期的请假表（日期,名字）
     python3 attendance_stat.py 导出.xlsx --on-time 20:00 --absent-after 20:30  # 改判定时间
     python3 attendance_stat.py 导出.xlsx --csv --out ./out                   # 额外导出 CSV 明细
@@ -706,7 +706,7 @@ def main(argv=None):
     ap.add_argument('--absent-after', dest='absent_after', help='缺勤线 HH:MM[:SS]，写 none 表示不设，默认 07:00:00')
     ap.add_argument('--workdays', help='统计日，如 1-5、1,3,5、周一至周五，默认周一至周五')
     ap.add_argument('--free-leaves', dest='free_leaves', type=int, help='每周免罚请假次数，默认 1')
-    ap.add_argument('--leave', default='', help='请假名单（所有日期通用），如 "小鹿,阿布"')
+    ap.add_argument('--leave', default='', help='请假名单（所有日期通用），如 "A004,A007"')
     ap.add_argument('--leave-file', dest='leave_file', help='按日期的请假表 CSV：日期,名字')
     ap.add_argument('--out', default='.', help='输出目录，默认当前目录')
     ap.add_argument('--csv', action='store_true', help='额外导出每日 CSV 明细')

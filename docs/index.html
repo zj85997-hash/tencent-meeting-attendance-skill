@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>腾讯会议考勤统计 Skill · 付钟浩 Alex</title>
+<meta name="description" content="读取腾讯会议「成员参会概况」导出表，按花名册判定准时、迟到、缺勤、请假，输出日报与周报。零依赖 Python，可作为 AI 工具的 Skill。">
+<style>
+  :root { --ink:#16324f; --ink2:#5b6b7c; --amber:#e08b3c; --green:#4a7c6f; --bg:#faf8f5; --card:#fff; --line:#e6e1da; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; color:var(--ink); background:var(--bg); line-height:1.7; }
+  a { color:var(--ink); }
+  .wrap { max-width:960px; margin:0 auto; padding:0 20px; }
+  header.top { border-bottom:1px solid var(--line); background:#fff; }
+  header.top .wrap { display:flex; justify-content:space-between; align-items:center; height:56px; font-size:14px; }
+  header.top b { letter-spacing:.5px; }
+  header.top nav a { margin-left:18px; text-decoration:none; color:var(--ink2); }
+  header.top nav a:hover { color:var(--amber); }
+  .hero { padding:64px 0 40px; }
+  .tag { display:inline-block; font-size:12px; padding:2px 10px; border-radius:99px; background:#f1e6da; color:#9a5a1f; margin-bottom:14px; }
+  h1 { font-size:36px; line-height:1.3; margin:0 0 14px; }
+  .lead { font-size:18px; color:var(--ink2); max-width:720px; margin:0 0 26px; }
+  .btns a { display:inline-block; margin:0 10px 10px 0; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:600; }
+  .btn-main { background:var(--ink); color:#fff !important; }
+  .btn-sub { border:1px solid var(--ink); }
+  section { padding:28px 0; }
+  h2 { font-size:22px; margin:0 0 18px; }
+  h2 small { font-size:14px; color:var(--ink2); font-weight:400; margin-left:8px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 18px 14px; }
+  .card h3 { font-size:16px; margin:0 0 6px; }
+  .card p { margin:0; color:var(--ink2); font-size:14px; }
+  pre { background:#0f2236; color:#e8eef5; padding:16px 18px; border-radius:10px; overflow-x:auto; font-size:13px; line-height:1.6; }
+  code { font-family:Menlo,Consolas,monospace; }
+  table { border-collapse:collapse; width:100%; background:#fff; font-size:14px; }
+  th, td { border:1px solid var(--line); padding:6px 8px; text-align:center; }
+  th { background:#f3efe9; }
+  td.ok { color:var(--green); } td.late { color:#b46b1f; font-weight:600; } td.miss { color:#b23b3b; font-weight:600; } td.leave { color:var(--ink2); }
+  .note { font-size:13px; color:var(--ink2); margin-top:8px; }
+  .steps { counter-reset:s; list-style:none; padding:0; margin:0; }
+  .steps li { position:relative; padding:0 0 14px 40px; }
+  .steps li::before { counter-increment:s; content:counter(s); position:absolute; left:0; top:2px; width:26px; height:26px; border-radius:50%; background:var(--amber); color:#fff; font-size:13px; text-align:center; line-height:26px; font-weight:700; }
+  .more a.card { display:block; text-decoration:none; }
+  .more a.card:hover { border-color:var(--amber); }
+  footer { border-top:1px solid var(--line); margin-top:30px; padding:24px 0 40px; font-size:13px; color:var(--ink2); }
+  @media (max-width:600px) { h1 { font-size:28px; } .hero { padding-top:40px; } header.top nav a.hide-sm { display:none; } }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <b>付钟浩 Alex · AI 培训讲师</b>
+  <nav><a href="#more" class="hide-sm">更多项目</a><a href="https://github.com/zj85997-hash/tencent-meeting-attendance-skill">GitHub ↗</a></nav>
+</div></header>
+
+<main class="wrap">
+  <div class="hero">
+    <span class="tag">开源 · MIT 许可 · 零依赖 Python</span>
+    <h1>腾讯会议考勤统计 Skill</h1>
+    <p class="lead">把腾讯会议导出的「成员参会概况」表交给 AI，或者自己跑一行命令，就能拿到准时、迟到、缺勤、请假名单，再加一份周报。昵称五花八门也能对上人。</p>
+    <div class="btns">
+      <a class="btn-main" href="https://github.com/zj85997-hash/tencent-meeting-attendance-skill">查看源码</a>
+      <a class="btn-sub" href="#start">30 秒试跑</a>
+    </div>
+  </div>
+
+  <section>
+    <h2>能做什么</h2>
+    <div class="grid">
+      <div class="card"><h3>📅 日报</h3><p>准时（按入会时间排序）、迟到、缺勤、请假、无法匹配的昵称，最后一行汇总。</p></div>
+      <div class="card"><h3>🗓 周报</h3><p>每人每天的状态矩阵，外加需关注名单、缺勤名单、全勤名单。</p></div>
+      <div class="card"><h3>🔤 昵称对得上</h3><p>括号后缀、英文大小写、手机和平板双设备、家长代入会，都能自动认到同一个人。</p></div>
+      <div class="card"><h3>⚙️ 规则可配置</h3><p>准时线、缺勤线、统计日、每周免罚请假次数，写在花名册里或用参数改。</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>周报长这样<small>示例数据全部虚构，人名用代号</small></h2>
+    <table>
+      <tr><th>姓名</th><th>周一</th><th>周二</th><th>周三</th><th>周四</th><th>周五</th><th>迟到</th><th>请假</th><th>缺勤</th><th>需关注</th></tr>
+      <tr><td>A007</td><td class="ok">准</td><td class="ok">准</td><td class="miss">缺</td><td class="ok">准</td><td class="late">迟</td><td>1</td><td>0</td><td>1</td><td>1</td></tr>
+      <tr><td>A008</td><td class="ok">准</td><td class="late">迟</td><td class="ok">准</td><td class="late">迟</td><td class="ok">准</td><td>2</td><td>0</td><td>0</td><td>2</td></tr>
+      <tr><td>A012</td><td class="ok">准</td><td class="leave">假</td><td class="leave">假</td><td class="ok">准</td><td class="ok">准</td><td>0</td><td>2</td><td>0</td><td>1</td></tr>
+      <tr><td>A016</td><td class="late">迟</td><td class="ok">准</td><td class="ok">准</td><td class="ok">准</td><td class="ok">准</td><td>1</td><td>0</td><td>0</td><td>1</td></tr>
+    </table>
+    <p class="note">A016 周一 06:00:01 入会，比准时线晚 1 秒，算迟到；A012 每周第 2 次请假按迟到计。完整报告见 <a href="https://github.com/zj85997-hash/tencent-meeting-attendance-skill/tree/main/examples/output">examples/output</a>。</p>
+  </section>
+
+  <section id="start">
+    <h2>30 秒试跑</h2>
+    <pre><code>git clone https://github.com/zj85997-hash/tencent-meeting-attendance-skill.git
+cd tencent-meeting-attendance-skill
+python3 scripts/attendance_stat.py examples/exports/*.xlsx \
+  --roster examples/roster.example.md --leave-file examples/leaves.example.csv --out out</code></pre>
+    <ol class="steps">
+      <li>腾讯会议 → 历史会议 → 导出「成员参会概况」</li>
+      <li>把 <code>examples/roster.example.md</code> 复制成 <code>roster.md</code>，填上你们的成员和规则</li>
+      <li>运行脚本，或者把文件夹装进 Claude Code / WorkBuddy，对 AI 说「统计今天的考勤」</li>
+    </ol>
+  </section>
+
+  <section id="more" class="more">
+    <h2>更多开源项目</h2>
+    <div class="grid">
+      <a class="card" href="https://zj85997-hash.github.io/family-ai-agents-prompts/"><h3>👨‍👩‍👧 AI 家庭智能体 Prompt 模板包</h3><p>亲子沟通翻译官、家庭学习教练、成长规划师，复制粘贴就能用。</p></a>
+      <a class="card" href="https://zj85997-hash.github.io/obsidian-second-brain-pipeline/"><h3>🧠 第二大脑汇聚管线</h3><p>得到、钉钉、飞书、备忘录的笔记汇进 Obsidian，自动分类、自动建目录。</p></a>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap">
+  © 2026 付钟浩（Alex）· AI 培训讲师 / FDE · 代码以 MIT 许可开源 · 页面中人名均为代号
+</div></footer>
+</body>
+</html>
