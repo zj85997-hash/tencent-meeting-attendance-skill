@@ -1,0 +1,18 @@
+# 系统与 Python 缓存
+.DS_Store
+__pycache__/
+*.pyc
+
+# 真实数据：花名册、导出表、请假表、报告，一律不提交
+roster.md
+leaves.csv
+data/
+out/
+reports/
+/*.xlsx
+*_考勤日报.md
+*_考勤周报.md
+*_考勤明细.csv
+
+# 示例数据是虚构的，需要提交
+!examples/**
